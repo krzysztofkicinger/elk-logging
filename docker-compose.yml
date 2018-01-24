@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+
+  elasticsearch:
+    image: elasticsearch
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    networks:
+      astro-network:
+        ipv4_address: 172.40.0.2
+    volumes:
+      - /data:/usr/share/elasticsearch/data
+
+  logstash:
+    build:
+      context: logstash
+      dockerfile: Dockerfile
+    command: logstash -f /conf/logstash-spring-boot.conf
+    ports:
+      - '5043:5043'
+      - '5044:5044'
+    networks:
+      astro-network:
+        ipv4_address: 172.40.0.3
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: kibana
+    ports:
+      - '5601:5601'
+    networks:
+      astro-network:
+        ipv4_address: 172.40.0.4
+    depends_on:
+      - elasticsearch
+      - logstash
+
+networks:
+  elk-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.40.0.0/24
